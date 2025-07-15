@@ -6,7 +6,8 @@ import streamlit as st
 
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import OllamaEmbeddings
+# from langchain_community.embeddings import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.chat_models import ChatOllama
@@ -14,6 +15,8 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 from cookie_utils import get_formatted_cookies
+
+
 
 load_dotenv()
 
@@ -90,6 +93,7 @@ def load_docs(urls: list[str], cookies: list) -> list[Document]:
 
 
 
+
 @st.cache_resource
 def create_rag_chain():
     urls_string = os.getenv("ARTICLE_URLS")
@@ -107,11 +111,15 @@ def create_rag_chain():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     
-    embedding_model = OllamaEmbeddings(model="mxbai-embed-large")
+    # embedding_model = OllamaEmbeddings(model="mxbai-embed-large")
+    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
+
     vectorstore = Chroma.from_documents(documents=splits, embedding=embedding_model)
     retriever = vectorstore.as_retriever()
     
-    llm = ChatOllama(model="llama3", temperature=0)
+    # llm = ChatOllama(model="llama3", temperature=0)
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    
 
     template = """Based solely on the CONTEXT from the provided knowledge base, answer whether the company meets the following DEMAND or not.
     Add a comment justifying your answer based on the context.

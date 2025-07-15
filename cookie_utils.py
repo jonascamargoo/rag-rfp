@@ -29,4 +29,4 @@ def get_formatted_cookies():
             
     return cookies_list
 
-print(get_formatted_cookies())
+# print(get_formatted_cookies())
