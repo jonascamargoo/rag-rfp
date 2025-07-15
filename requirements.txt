@@ -7,3 +7,4 @@ streamlit
 playwright
 beautifulsoup4
 python-dotenv
+tiktoken

@@ -10,13 +10,14 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import Chroma
 from langchain_core.runnables import RunnablePassthrough
-from langchain_community.chat_models import ChatOllama
+# from langchain_community.chat_models import ChatOllama
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 from cookie_utils import get_formatted_cookies
+from count_tokens import count_tokens
 
-
+MAX_TOKENS_PER_CALL = 8192
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ def extract_content_from_json(soup: BeautifulSoup) -> str:
     
 def load_docs(urls: list[str], cookies: list) -> list[Document]:
     all_docs = []
+    
     print("Iniciando o Playwright para coleta de dados...")
     with sync_playwright() as p:
         # headless=False para ver o navegador abrindo - debugging
@@ -71,9 +73,16 @@ def load_docs(urls: list[str], cookies: list) -> list[Document]:
                 title = soup.find('h1').get_text(strip=True) if soup.find('h1') else "Título não encontrado"
                 
                 content = extract_content_from_json(soup)
-                
+                token_count = count_tokens(content)
+
                 print(f"TÍTULO EXTRAÍDO: {title}")
-                print(f"CONTEÚDO EXTRAÍDO (PRIMEIROS 150 CARACTERES): {content[:150]}...")
+                # print(f"CONTEÚDO EXTRAÍDO (PRIMEIROS 150 CARACTERES): {content[:150]}...")
+                if token_count > MAX_TOKENS_PER_CALL:
+                    print(f"--> AVISO: O conteúdo da URL {url} tem {token_count} tokens e pode ser truncado pelo modelo.")
+
+
+                if "Conteúdo não encontrado" in content or "Falha ao analisar" in content:
+                     print(f"AVISO: Não foi possível extrair o conteúdo de {url}.")
 
                 if "Conteúdo não encontrado" in content or "Falha ao analisar" in content:
                      print(f"AVISO: Não foi possível extrair o conteúdo de {url}.")
@@ -90,8 +99,6 @@ def load_docs(urls: list[str], cookies: list) -> list[Document]:
         browser.close()
         print("\nPlaywright finalizado.")
     return all_docs
-
-
 
 
 @st.cache_resource
@@ -112,7 +119,7 @@ def create_rag_chain():
     splits = text_splitter.split_documents(docs)
     
     # embedding_model = OllamaEmbeddings(model="mxbai-embed-large")
-    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
+    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=512) # Redução dimensionalidade para 512. Padrão é 1536
 
     vectorstore = Chroma.from_documents(documents=splits, embedding=embedding_model)
     retriever = vectorstore.as_retriever()

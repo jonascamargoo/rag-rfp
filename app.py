@@ -3,12 +3,12 @@ from rag_pipeline import create_rag_chain
 from langchain_community.callbacks import get_openai_callback
 
 st.set_page_config(page_title="RFP Validation", layout="wide")
-st.title("Validador de Propostas (RFP) com Base de Conhecimento carregada")
+st.title("RFP Validation Tool")
 
 try:
     rag_chain = create_rag_chain()
     
-    st.info("Base de conhecimento carregada. Insira a demanda da RFP abaixo.")
+    st.info("Base de conhecimento carregada. Insira a demanda abaixo.")
 
     user_input = st.text_area("Cole aqui o requisito da RFP para validação:", height=150)
 
@@ -24,17 +24,3 @@ try:
 
 except Exception as e:
     st.error(f"Ocorreu um erro: {e}")
-    
-    
-        # if st.button("Validar Demanda"):
-        # if user_input:
-        #     with st.spinner("Analisando..."):
-        #         # --- MUDANÇA AQUI: Envolvendo a chamada com o callback ---
-        #         with get_openai_callback() as cb:
-        #             response = rag_chain.invoke(user_input)
-        #             print(cb)  # Isso imprimirá no terminal
-
-        #         st.subheader("Resultado da Validação:")
-        #         st.markdown(response)
-        # else:
-        #     st.warning("Por favor, insira o texto de uma demanda para validar.")
